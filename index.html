@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurante App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: #f8f8f8;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .mobile-frame {
+            height: 95vh;
+            overflow-y: auto;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            position: relative;
+            background-color: white;
+        }
+        
+        .restaurant-header {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+            color: white;
+            padding: 20px;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .category-chip {
+            background-color: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 6px 12px;
+            margin-right: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .category-chip.active {
+            background-color: white;
+            color: #ff6b6b;
+        }
+        
+        .category-scroll {
+            display: flex;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            margin-top: 15px;
+        }
+        
+        .menu-item {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            background: white;
+            transition: transform 0.2s;
+        }
+        
+        .menu-item:hover {
+            transform: translateY(-2px);
+        }
+        
+        .cart-item {
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+        }
+        
+        .floating-cart {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ff6b6b;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+            cursor: pointer;
+            z-index: 100;
+        }
+        
+        .cart-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: white;
+            color: #ff6b6b;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 200;
+            display: none;
+        }
+        
+        .modal {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            transition: bottom 0.3s;
+            z-index: 300;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4BB543;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 400;
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { bottom: -100%; }
+            to { bottom: 0; }
+        }
+        
+        @keyframes slideDown {
+            from { bottom: 0; }
+            to { bottom: -100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-frame" id="app">
+        <!-- Tela Inicial -->
+        <div id="home-screen">
+            <div class="restaurant-header">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold">Bistro Elegante</h1>
+                        <p class="text-sm opacity-90">Comida caseira de qualidade</p>
+                    </div>
+                    <img src="https://placehold.co/80x80" alt="Logo do restaurante Bistro Elegante com design minimalista em tons pastel" class="rounded-full w-16 h-16 border-2 border-white">
+                </div>
+                
+                <div class="mt-4">
+                    <div class="flex items-center text-sm">
+                        <span class="material-icons text-xs">schedule</span>
+                        <span class="ml-1">Aberto agora: 11:00 - 22:00</span>
+                    </div>
+                    <div class="flex items-center text-sm mt-1">
+                        <span class="material-icons text-xs">place</span>
+                        <span class="ml-1">Av. Principal, 123 - Centro</span>
+                    </div>
+                </div>
+                
+                <div class="category-scroll" id="categories">
+                    <div class="category-chip active" data-category="all">Todos</div>
+                    <div class="category-chip" data-category="entradas">Entradas</div>
+                    <div class="category-chip" data-category="pratos">Pratos principais</div>
+                    <div class="category-chip" data-category="bebidas">Bebidas</div>
+                    <div class="category-chip" data-category="sobremesas">Sobremesas</div>
+                </div>
+            </div>
+            
+            <div class="p-4 pb-20">
+                <h2 class="text-xl font-semibold mb-4">Cardápio</h2>
+                
+                <div id="menu-items">
+                    <!-- Itens serão carregados via JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Carrinho Flutuante -->
+    <div class="floating-cart" id="floating-cart">
+        <span class="material-icons">shopping_cart</span>
+        <div class="cart-badge" id="cart-badge">0</div>
+    </div>
+    
+    <!-- Backdrop -->
+    <div class="backdrop" id="backdrop"></div>
+    
+    <!-- Modal do Carrinho -->
+    <div class="modal" id="cart-modal">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">Seu Pedido</h3>
+            <button id="close-cart" class="text-gray-500">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        
+        <div id="cart-items">
+            <!-- Itens do carrinho serão adicionados aqui -->
+            <p class="text-center text-gray-500 py-10">Seu carrinho está vazio</p>
+        </div>
+        
+        <div class="pt-4 border-t border-gray-200 mt-4">
+            <div class="flex justify-between mb-2">
+                <span>Subtotal:</span>
+                <span id="cart-subtotal">R$ 0,00</span>
+            </div>
+            <button id="checkout-btn" class="w-full bg-green-500 text-white py-3 rounded-lg font-medium">
+                Finalizar Pedido
+            </button>
+        </div>
+    </div>
+    
+    <!-- Modal de Detalhes do Item -->
+    <div class="modal" id="item-modal">
+        <div class="flex justify-between items-center mb-4">
+            <h3 id="item-modal-title" class="text-lg font-semibold"></h3>
+            <button id="close-item" class="text-gray-500">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        
+        <img id="item-modal-image" src="https://placehold.co/600x400" alt="" class="w-full h-48 object-cover rounded-lg mb-4">
+        
+        <p id="item-modal-description" class="text-gray-600 mb-4"></p>
+        
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <span id="item-modal-price" class="text-xl font-bold"></span>
+            </div>
+            <div class="flex items-center border rounded-full">
+                <button class="quantity-btn px-3 py-1 text-lg" data-action="decrease">-</button>
+                <span id="item-quantity" class="px-4">1</span>
+                <button class="quantity-btn px-3 py-1 text-lg" data-action="increase">+</button>
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            <label class="block text-gray-700 mb-2">Observações</label>
+            <textarea id="item-notes" class="w-full border rounded-lg p-2" rows="2" placeholder="Ex: sem cebola, bem passado..."></textarea>
+        </div>
+        
+        <button id="add-to-cart" class="w-full bg-green-500 text-white py-3 rounded-lg font-medium">
+            Adicionar ao Pedido
+        </button>
+    </div>
+    
+    <!-- Modal de Confirmação -->
+    <div class="modal" id="confirm-modal">
+        <div class="text-center">
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="material-icons text-green-500 text-4xl">check_circle</span>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Pedido Confirmado!</h3>
+            <p class="text-gray-600 mb-6">Seu pedido foi enviado para a cozinha e será preparado em breve.</p>
+            <button id="close-confirm" class="w-full bg-green-500 text-white py-3 rounded-lg font-medium">
+                Voltar ao Cardápio
+            </button>
+        </div>
+    </div>
+    
+    <!-- Notificação -->
+    <div class="notification" id="notification">
+        <span id="notification-message"></span>
+    </div>
+    
+    <script>
+        // Dados simulados do cardápio (substituir por Firebase em produção)
+        const menuData = {
+            entradas: [
+                {
+                    id: 1,
+                    name: "Bruschetta Clássica",
+                    description: "Pão italiano torrado com tomate fresco, manjericão e azeite de oliva",
+                    price: 18.90,
+                    category: "entradas",
+                    image: "https://placehold.co/600x400?text=Bruschetta"
+                },
+                {
+                    id: 2,
+                    name: "Carpaccio de Alcatra",
+                    description: "Finas fatias de alcatra crua com rúcula, parmesão e azeite trufado",
+                    price: 32.50,
+                    category: "entradas",
+                    image: "https://placehold.co/600x400?text=Carpaccio"
+                }
+            ],
+            pratos: [
+                {
+                    id: 3,
+                    name: "Risoto de Funghi",
+                    description: "Risoto cremoso com cogumelos porcini frescos e trufa negra",
+                    price: 56.90,
+                    category: "pratos",
+                    image: "https://placehold.co/600x400?text=Risoto"
+                },
+                {
+                    id: 4,
+                    name: "Filé Mignon com Purê",
+                    description: "Filé mignon grelhado ao ponto, servido com purê de batatas especiais",
+                    price: 72.50,
+                    category: "pratos",
+                    image: "https://placehold.co/600x400?text=Filé"
+                },
+                {
+                    id: 5,
+                    name: "Salmão Grelhado",
+                    description: "Salmão fresco grelhado com molho de manteiga e limão siciliano",
+                    price: 65.90,
+                    category: "pratos",
+                    image: "https://placehold.co/600x400?text=Salmão"
+                }
+            ],
+            bebidas: [
+                {
+                    id: 6,
+                    name: "Suco Natural",
+                    description: "Suco feito na hora (laranja, abacaxi ou maracujá)",
+                    price: 12.90,
+                    category: "bebidas",
+                    image: "https://placehold.co/600x400?text=Suco"
+                },
+                {
+                    id: 7,
+                    name: "Vinho Tinto Seco",
+                    description: "Casa Seleção - Garrafa 750ml",
+                    price: 89.90,
+                    category: "bebidas",
+                    image: "https://placehold.co/600x400?text=Vinho"
+                }
+            ],
+            sobremesas: [
+                {
+                    id: 8,
+                    name: "Tiramisu",
+                    description: "Clássico tiramisu italiano com café e mascarpone",
+                    price: 22.90,
+                    category: "sobremesas",
+                    image: "https://placehold.co/600x400?text=Tiramisu"
+                },
+                {
+                    id: 9,
+                    name: "Fondue de Chocolate",
+                    description: "Chocolate belga derretido acompanhado de frutas frescas",
+                    price: 38.90,
+                    category: "sobremesas",
+                    image: "https://placehold.co/600x400?text=Fondue"
+                }
+            ]
+        };
+        
+        // Estado da aplicação
+        let state = {
+            currentCategory: 'all',
+            cart: [],
+            currentItem: null
+        };
+        
+        // Elementos do DOM
+        const elements = {
+            menuItems: document.getElementById('menu-items'),
+            categories: document.getElementById('categories'),
+            floatingCart: document.getElementById('floating-cart'),
+            cartBadge: document.getElementById('cart-badge'),
+            cartModal: document.getElementById('cart-modal'),
+            cartItems: document.getElementById('cart-items'),
+            cartSubtotal: document.getElementById('cart-subtotal'),
+            backdrop: document.getElementById('backdrop'),
+            closeCart: document.getElementById('close-cart'),
+            checkoutBtn: document.getElementById('checkout-btn'),
+            itemModal: document.getElementById('item-modal'),
+            itemModalTitle: document.getElementById('item-modal-title'),
+            itemModalImage: document.getElementById('item-modal-image'),
+            itemModalDescription: document.getElementById('item-modal-description'),
+            itemModalPrice: document.getElementById('item-modal-price'),
+            itemQuantity: document.getElementById('item-quantity'),
+            itemNotes: document.getElementById('item-notes'),
+            addToCart: document.getElementById('add-to-cart'),
+            closeItem: document.getElementById('close-item'),
+            confirmModal: document.getElementById('confirm-modal'),
+            closeConfirm: document.getElementById('close-confirm'),
+            notification: document.getElementById('notification'),
+            notificationMessage: document.getElementById('notification-message'),
+            quantityButtons: document.querySelectorAll('.quantity-btn')
+        };
+        
+        // Funções
+        function formatPrice(price) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
+        }
+        
+        function showNotification(message) {
+            elements.notificationMessage.textContent = message;
+            elements.notification.style.display = 'block';
+            setTimeout(() => {
+                elements.notification.style.display = 'none';
+            }, 3000);
+        }
+        
+        function renderMenuItems() {
+            elements.menuItems.innerHTML = '';
+            
+            let itemsToRender = [];
+            
+            if (state.currentCategory === 'all') {
+                Object.values(menuData).forEach(category => {
+                    itemsToRender = itemsToRender.concat(category);
+                });
+            } else {
+                itemsToRender = menuData[state.currentCategory] || [];
+            }
+            
+            if (itemsToRender.length === 0) {
+                elements.menuItems.innerHTML = '<p class="text-center text-gray-500 py-10">Nenhum item nesta categoria</p>';
+                return;
+            }
+            
+            itemsToRender.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'menu-item';
+                itemElement.innerHTML = `
+                    <div class="flex">
+                        <div class="w-24 h-24 flex-shrink-0">
+                            <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-3 flex-grow">
+                            <h3 class="font-semibold">${item.name}</h3>
+                            <p class="text-sm text-gray-500 line-clamp-2">${item.description}</p>
+                            <div class="mt-2 flex justify-between items-end">
+                                <span class="text-green-500 font-semibold">${formatPrice(item.price)}</span>
+                                <button class="text-sm bg-gray-100 px-3 py-1 rounded-full" data-id="${item.id}">Adicionar</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                elements.menuItems.appendChild(itemElement);
+            });
+            
+            // Adiciona evento aos botões
+            document.querySelectorAll('#menu-items button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const itemId = parseInt(e.target.getAttribute('data-id'));
+                    const item = findItemById(itemId);
+                    if (item) {
+                        openItemModal(item);
+                    }
+                });
+            });
+        }
+        
+        function findItemById(id) {
+            for (const category in menuData) {
+                const foundItem = menuData[category].find(item => item.id === id);
+                if (foundItem) return foundItem;
+            }
+            return null;
+        }
+        
+        function openItemModal(item) {
+            state.currentItem = item;
+            elements.itemModalTitle.textContent = item.name;
+            elements.itemModalImage.src = item.image;
+            elements.itemModalImage.alt = item.name;
+            elements.itemModalDescription.textContent = item.description;
+            elements.itemModalPrice.textContent = formatPrice(item.price);
+            elements.itemQuantity.textContent = '1';
+            elements.itemNotes.value = '';
+            
+            showModal(elements.itemModal);
+        }
+        
+        function updateCartBadge() {
+            const totalItems = state.cart.reduce((total, item) => total + item.quantity, 0);
+            elements.cartBadge.textContent = totalItems;
+        }
+        
+        function renderCart() {
+            if (state.cart.length === 0) {
+                elements.cartItems.innerHTML = '<p class="text-center text-gray-500 py-10">Seu carrinho está vazio</p>';
+                elements.cartSubtotal.textContent = formatPrice(0);
+                return;
+            }
+            
+            elements.cartItems.innerHTML = '';
+            
+            state.cart.forEach((cartItem, index) => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'cart-item';
+                itemElement.innerHTML = `
+                    <div class="flex justify-between">
+                        <div>
+                            <h4 class="font-medium">${cartItem.item.name}</h4>
+                            <p class="text-sm text-gray-500">${formatPrice(cartItem.item.price)} × ${cartItem.quantity}</p>
+                            ${cartItem.notes ? `<p class="text-xs text-gray-500 mt-1">${cartItem.notes}</p>` : ''}
+                        </div>
+                        <div>
+                            <button class="text-red-500 text-sm" data-index="${index}">
+                                <span class="material-icons text-base">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                elements.cartItems.appendChild(itemElement);
+            });
+            
+            // Calcula subtotal
+            const subtotal = state.cart.reduce((total, item) => {
+                return total + (item.item.price * item.quantity);
+            }, 0);
+            
+            elements.cartSubtotal.textContent = formatPrice(subtotal);
+            
+            // Adiciona evento aos botões de remover
+            document.querySelectorAll('#cart-items button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const index = parseInt(e.target.closest('button').getAttribute('data-index'));
+                    state.cart.splice(index, 1);
+                    renderCart();
+                    updateCartBadge();
+                    showNotification('Item removido do carrinho');
+                });
+            });
+        }
+        
+        function showModal(modal) {
+            elements.backdrop.style.display = 'block';
+            modal.style.animation = 'slideUp 0.3s forwards';
+            modal.style.display = 'block';
+        }
+        
+        function hideModal(modal) {
+            modal.style.animation = 'slideDown 0.3s forwards';
+            setTimeout(() => {
+                modal.style.display = 'none';
+                elements.backdrop.style.display = 'none';
+            }, 300);
+        }
+        
+        function closeAllModals() {
+            hideModal(elements.cartModal);
+            hideModal(elements.itemModal);
+            hideModal(elements.confirmModal);
+        }
+        
+        // Event Listeners
+        elements.categories.addEventListener('click', (e) => {
+            const categoryChip = e.target.closest('.category-chip');
+            if (!categoryChip) return;
+            
+            document.querySelectorAll('.category-chip').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            
+            categoryChip.classList.add('active');
+            state.currentCategory = categoryChip.getAttribute('data-category');
+            renderMenuItems();
+        });
+        
+        elements.floatingCart.addEventListener('click', () => {
+            renderCart();
+            showModal(elements.cartModal);
+        });
+        
+        elements.backdrop.addEventListener('click', closeAllModals);
+        
+        elements.closeCart.addEventListener('click', () => {
+            hideModal(elements.cartModal);
+        });
+        
+        elements.closeItem.addEventListener('click', () => {
+            hideModal(elements.itemModal);
+        });
+        
+        elements.closeConfirm.addEventListener('click', () => {
+            hideModal(elements.confirmModal);
+        });
+        
+        elements.quantityButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                let quantity = parseInt(elements.itemQuantity.textContent);
+                
+                if (button.getAttribute('data-action') === 'increase') {
+                    quantity += 1;
+                } else if (button.getAttribute('data-action') === 'decrease' && quantity > 1) {
+                    quantity -= 1;
+                }
+                
+                elements.itemQuantity.textContent = quantity;
+            });
+        });
+        
+        elements.addToCart.addEventListener('click', () => {
+            if (!state.currentItem) return;
+            
+            const quantity = parseInt(elements.itemQuantity.textContent);
+            const notes = elements.itemNotes.value;
+            
+            // Verifica se o item já está no carrinho
+            const existingItemIndex = state.cart.findIndex(
+                item => item.item.id === state.currentItem.id && item.notes === notes
+            );
+            
+            if (existingItemIndex >= 0) {
+                // Atualiza a quantidade se o item já existir com as mesmas observações
+                state.cart[existingItemIndex].quantity += quantity;
+            } else {
+                // Adiciona novo item ao carrinho
+                state.cart.push({
+                    item: state.currentItem,
+                    quantity: quantity,
+                    notes: notes
+                });
+            }
+            
+            hideModal(elements.itemModal);
+            updateCartBadge();
+            showNotification('Item adicionado ao carrinho');
+        });
+        
+        elements.checkoutBtn.addEventListener('click', () => {
+            hideModal(elements.cartModal);
+            
+            // Em uma aplicação real, aqui enviaríamos o pedido para o backend
+            console.log('Pedido enviado:', state.cart);
+            
+            // Limpa o carrinho
+            state.cart = [];
+            updateCartBadge();
+            
+            // Mostra confirmação
+            setTimeout(() => {
+                showModal(elements.confirmModal);
+            }, 300);
+        });
+        
+        // Inicialização
+        renderMenuItems();
+    </script>
+</body>
+</html>
